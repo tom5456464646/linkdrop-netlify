@@ -1,3 +1,5 @@
+// Netlify Functions + Netlify Blobs (manual config via env)
+// Возвращаем { statusCode, headers, body }
 import { getStore } from "@netlify/blobs";
 
 const respond = (data, status = 200) => ({
@@ -21,6 +23,7 @@ export async function handler(event) {
     const store = getStore({
       name: "linkdrop",
       consistency: "strong",
+      // если Blobs не включены в UI — берём siteID и token из переменных окружения
       siteID: process.env.BLOBS_SITE_ID,
       token: process.env.BLOBS_TOKEN,
     });
@@ -32,6 +35,10 @@ export async function handler(event) {
     }
 
     if (event.httpMethod === "POST") {
+      // (опционально) защита токеном:
+      // const token = event.headers["x-write-token"] || event.headers["X-Write-Token"];
+      // if (!token || token !== process.env.WRITE_TOKEN) return bad("FORBIDDEN", 403);
+
       const body = JSON.parse(event.body || "{}");
       const raw = String(body.url || "").trim();
       const title = body.title ? String(body.title).trim() : null;
@@ -46,8 +53,13 @@ export async function handler(event) {
     }
 
     if (event.httpMethod === "DELETE") {
-      const q = event.queryStringParameters || {};
-      const id = Number(q.id || q.delete || 0);
+      // фикс: берём id из query (?id=123); fallback — выцепить число из пути
+      const fromQuery = Number(event.queryStringParameters?.id || event.queryStringParameters?.delete || 0);
+      const fromPath = (() => {
+        const m = (event.path || "").match(/(?:^|\/)(\d+)(?:$|\/)/);
+        return m ? Number(m[1]) : 0;
+      })();
+      const id = fromQuery || fromPath;
       if (!id) return bad("MISSING_ID", 404);
 
       const items = await loadAll(store);

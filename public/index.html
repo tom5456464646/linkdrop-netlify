@@ -301,7 +301,8 @@
     modal.querySelector('[data-yes]').onclick = async () => {
       if (!pendingDeleteId) return closeModal();
       try {
-        const r = await fetch('/api/links/' + pendingDeleteId, { method: 'DELETE' });
+        const r = await fetch('/api/links?id=' + encodeURIComponent(pendingDeleteId), { method: 'DELETE' });
+
         const data = await r.json();
         if (data.ok) fetchLinks(); else alert('Ошибка удаления: ' + (data.error || ''));
       } catch { alert('Ошибка сети'); }

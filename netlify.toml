@@ -5,12 +5,8 @@
   directory = "netlify/functions"
   node_bundler = "esbuild"
 
+# фронт ходит на /api/links -> функция
 [[redirects]]
   from = "/api/links"
   to = "/.netlify/functions/links"
-  status = 200
-
-[[redirects]]
-  from = "/api/links/:id"
-  to = "/.netlify/functions/links?id=:id"
   status = 200
