@@ -40,13 +40,6 @@
     .hero{margin:16px 0 12px;}
     .hero h1{margin:0 0 6px; font-size:clamp(22px,3.5vw,28px);}
     .hero p{margin:0; color:var(--muted);}
-    .links { margin-top:10px; display:flex; gap:10px; flex-wrap:wrap; }
-    .a-btn{
-      appearance:none; text-decoration:none; display:inline-flex; align-items:center; gap:8px;
-      padding:10px 14px; border-radius:10px; border:1px solid var(--stroke); color:var(--text); background:var(--card);
-    }
-    .a-btn.primary{ background:var(--primary); color:#fff; border-color:transparent; }
-    .a-btn:hover{ background:color-mix(in oklab,var(--card) 70%, var(--bg)); }
 
     .list{ display:grid; gap:12px; margin-top:16px; }
     .card{
@@ -61,9 +54,6 @@
       transition:transform .05s, background .2s, box-shadow .2s; box-shadow:var(--shadow);
     }
     .btn:active{ transform:translateY(1px); background:var(--primary-press); }
-
-    .toolbar{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:8px; }
-    .muted{ color:var(--muted); }
 
     .empty{
       margin:28px 0; padding:22px; border:1px dashed var(--stroke); border-radius:14px; color:var(--muted);
@@ -82,11 +72,6 @@
     <section class="hero">
       <h1>Список фильмов</h1>
       <p class="muted">Открой на телевизоре и нажимай «Перейти» — ссылка откроется в новой вкладке.</p>
-      <div class="links">
-        <a class="a-btn" href="/">Добавить ссылки</a>
-        <a class="a-btn" id="refresh" href="#">Обновить</a>
-        <a class="a-btn primary" id="auto" href="#">Автообновление: вкл</a>
-      </div>
     </section>
 
     <section id="list" class="list" aria-live="polite"></section>
@@ -94,38 +79,12 @@
 
   <script>
     const listEl = document.getElementById('list');
-    const btnRefresh = document.getElementById('refresh');
-    const btnAuto = document.getElementById('auto');
-
-    let autoTimer = null;         // таймер автообновления
-    let autoEnabled = true;       // авт обновление включено по умолчанию
 
     function esc(s){
       return String(s)
         .replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')
         .replaceAll('"','&quot;').replaceAll("'","&#039;");
     }
-
-    function setAutoLabel(){
-      btnAuto.textContent = 'Автообновление: ' + (autoEnabled ? 'вкл' : 'выкл');
-      btnAuto.classList.toggle('primary', autoEnabled);
-    }
-
-    function startAuto(){
-      stopAuto();
-      autoTimer = setInterval(load, 5000);
-    }
-    function stopAuto(){
-      if (autoTimer){ clearInterval(autoTimer); autoTimer = null; }
-    }
-
-    btnRefresh.addEventListener('click', (e) => { e.preventDefault(); load(); });
-    btnAuto.addEventListener('click', (e) => {
-      e.preventDefault();
-      autoEnabled = !autoEnabled;
-      setAutoLabel();
-      if (autoEnabled) startAuto(); else stopAuto();
-    });
 
     function render(items){
       if (!items.length){
@@ -157,22 +116,13 @@
         if (!data.ok) throw new Error(data.error || 'Ошибка API');
         render(data.items);
       }catch(e){
-        listEl.innerHTML = '<div class="empty">Ошибка загрузки. Нажми «Обновить».</div>';
+        listEl.innerHTML = '<div class="empty">Ошибка загрузки. Обновите страницу.';
       }
     }
 
-    // Автообновление включено сразу
-    setAutoLabel();
+    // автoобновление всегда включено
     load();
-    startAuto();
-
-    // Можно включить/выключить через ?auto=0/1
-    const params = new URLSearchParams(location.search);
-    if (params.has('auto')){
-      autoEnabled = params.get('auto') !== '0';
-      setAutoLabel();
-      if (autoEnabled) startAuto(); else stopAuto();
-    }
+    setInterval(load, 5000);
   </script>
 </body>
 </html>
