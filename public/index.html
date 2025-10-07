@@ -2,98 +2,333 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>LinkDrop</title>
+  <meta name="color-scheme" content="light dark" />
   <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 16px; }
-    .wrap { max-width: 720px; margin: 0 auto; }
-    h1 { font-size: 24px; margin: 0 0 12px; }
-    form { display: flex; gap: 8px; margin-bottom: 16px; }
-    input[type="url"], input[type="text"] { flex: 1; padding: 10px; font-size: 16px; }
-    button { padding: 10px 14px; font-size: 16px; cursor: pointer; }
-    .item { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; padding: 12px; border: 1px solid #ddd; border-radius: 10px; margin-bottom: 10px; }
-    .link { font-size: 18px; word-break: break-word; }
-    .meta { color: #666; font-size: 12px; margin-top: 4px; }
-    .big-link { display: inline-block; padding: 12px 14px; border-radius: 8px; border: 1px solid #ccc; text-decoration: none; }
+    :root {
+      --bg: #0b0c10;
+      --card: #111319;
+      --text: #e6e7ea;
+      --muted: #a9adba;
+      --primary: #4e8cff;
+      --primary-press: #3e74d2;
+      --danger: #ff4e6a;
+      --danger-press: #d23e56;
+      --stroke: #262937;
+      --ring: 0 0 0 3px rgba(78,140,255,.35);
+      --shadow: 0 10px 24px rgba(0,0,0,.35);
+    }
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #f6f7fb;
+        --card: #ffffff;
+        --text: #101218;
+        --muted: #6b7280;
+        --primary: #2563eb;
+        --primary-press: #1e4fc0;
+        --danger: #dc2626;
+        --danger-press: #b91c1c;
+        --stroke: #e5e7eb;
+        --shadow: 0 10px 24px rgba(16, 18, 24, .08);
+      }
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 16px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, 'Helvetica Neue', Arial, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .container {
+      max-width: 880px;
+      margin: 0 auto;
+      padding: 20px clamp(16px, 4vw, 24px) calc(clamp(16px, 4vw, 24px));
+      padding-bottom: calc(120px + env(safe-area-inset-bottom));
+    }
+
+    header.topbar {
+      position: sticky; top: 0; z-index: 10;
+      backdrop-filter: blur(8px);
+      background: color-mix(in oklab, var(--bg) 92%, transparent);
+      border-bottom: 1px solid var(--stroke);
+    }
+    .topbar .inner {
+      max-width: 880px;
+      margin: 0 auto;
+      padding: 12px clamp(16px, 4vw, 24px);
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    }
+    .brand {
+      display: inline-flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing:.2px;
+    }
+    .brand .logo {
+      width: 28px; height: 28px; border-radius: 8px;
+      display: grid; place-items: center;
+      background: linear-gradient(135deg, var(--primary), #8a7bff);
+      color: #fff; font-size: 16px; box-shadow: var(--shadow);
+    }
+
+    .hero {
+      margin: 24px 0 12px;
+    }
+    .hero h1 {
+      margin: 0 0 6px; font-size: clamp(22px, 3.5vw, 28px);
+    }
+    .hero p { margin: 0; color: var(--muted); }
+
+    /* Input dock (mobile-first) */
+    .dock {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+      padding: 14px clamp(12px, 4vw, 20px) calc(14px + env(safe-area-inset-bottom));
+      border-top: 1px solid var(--stroke);
+      background: color-mix(in oklab, var(--bg) 94%, transparent);
+      backdrop-filter: blur(8px);
+    }
+    .dock .row {
+      max-width: 880px; margin: 0 auto;
+      display: grid; gap: 8px;
+      grid-template-columns: 1fr auto;
+    }
+    .dock .row .stack { display: grid; gap: 8px; }
+    .field {
+      appearance: none; border: 1px solid var(--stroke); background: var(--card); color: var(--text);
+      border-radius: 12px; padding: 12px 14px; width: 100%; font: inherit; outline: none;
+      box-shadow: none; transition: border .2s, box-shadow .2s, transform .05s;
+    }
+    .field:focus { border-color: color-mix(in oklab, var(--primary) 60%, var(--stroke)); box-shadow: var(--ring); }
+    .btn {
+      appearance: none; border: 0; background: var(--primary); color: #fff; font-weight: 600;
+      border-radius: 12px; padding: 12px 16px; cursor: pointer; height: 44px;
+      transition: transform .05s, background .2s, box-shadow .2s; box-shadow: var(--shadow);
+    }
+    .btn:active { transform: translateY(1px); background: var(--primary-press); }
+
+    /* List */
+    .list { display: grid; gap: 12px; margin-top: 16px; }
+    .card {
+      background: var(--card); border: 1px solid var(--stroke); border-radius: 14px; padding: 14px;
+      display: grid; gap: 10px; box-shadow: var(--shadow);
+    }
+    .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+
+    .title {
+      font-size: clamp(16px, 2.8vw, 18px); font-weight: 650; word-break: break-word;
+    }
+    .title a { color: inherit; text-decoration: none; }
+    .title a:hover { text-decoration: underline; }
+
+    .meta { color: var(--muted); font-size: 13px; }
+
+    .act {
+      display: inline-flex; gap: 8px;
+    }
+    .icon-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      height: 40px; padding: 0 12px; border-radius: 10px; cursor: pointer;
+      background: transparent; color: var(--text); border: 1px solid var(--stroke);
+      transition: background .2s, border-color .2s, transform .05s;
+    }
+    .icon-btn:hover { background: color-mix(in oklab, var(--card) 70%, var(--bg)); }
+    .icon-btn:active { transform: translateY(1px); }
+    .icon-btn.danger { border-color: color-mix(in oklab, var(--danger) 40%, var(--stroke)); color: var(--danger); }
+    .icon { width: 18px; height: 18px; display: inline-block; }
+
+    .empty {
+      margin: 28px 0; padding: 22px; border: 1px dashed var(--stroke); border-radius: 14px; color: var(--muted);
+      text-align: center;
+    }
+
+    /* Modal */
+    .modal {
+      position: fixed; inset: 0; display: none; place-items: center; z-index: 50;
+      background: color-mix(in oklab, var(--bg) 40%, #0000);
+      padding: 20px;
+    }
+    .modal.show { display: grid; }
+    .modal .sheet {
+      background: var(--card); border: 1px solid var(--stroke); border-radius: 16px; padding: 18px;
+      width: 100%; max-width: 420px; box-shadow: var(--shadow);
+    }
+    .modal h3 { margin: 0 0 6px; font-size: 18px; }
+    .modal p { margin: 0 0 14px; color: var(--muted); }
+    .modal .actions { display: flex; gap: 10px; justify-content: flex-end; }
+    .btn.secondary {
+      background: transparent; color: var(--text); border: 1px solid var(--stroke);
+      box-shadow: none; height: 42px; padding: 10px 14px;
+    }
+    .btn.danger { background: var(--danger); }
+    .btn.danger:active { background: var(--danger-press); }
+
+    /* Desktop tweaks */
+    @media (min-width: 720px) {
+      .dock .row { grid-template-columns: 2fr 1.2fr auto; }
+      .container { padding-bottom: 32px; }
+      .dock { position: static; backdrop-filter: none; background: transparent; border: 0; padding: 0; margin-top: 16px; }
+    }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <h1>LinkDrop</h1>
+  <header class="topbar">
+    <div class="inner">
+      <div class="brand">
+        <div class="logo" aria-hidden="true">L</div>
+        <div>LinkDrop</div>
+      </div>
+    </div>
+  </header>
 
-    <form id="addForm">
-      <input id="title" type="text" placeholder="Название (необязательно)" />
-      <input id="url" type="url" placeholder="Вставь ссылку (https://...)" required />
-      <button type="submit">Добавить</button>
-    </form>
+  <main class="container">
+    <section class="hero">
+      <h1>Кидай ссылку с телефона → открывай на ТВ</h1>
+      <p>Вставь URL сервиса (Кинопоиск, Okko, YouTube и т.д.), нажми «Добавить», потом открой сайт на телевизоре и кликни по ссылке.</p>
+    </section>
 
-    <div id="list"></div>
+    <!-- dock / form -->
+    <section class="dock">
+      <form id="form" class="row" autocomplete="off">
+        <div class="stack">
+          <input id="url" class="field" type="url" inputmode="url" placeholder="https://..." required />
+          <input id="title" class="field" type="text" placeholder="Название (необязательно)" />
+        </div>
+        <button class="btn" type="submit" aria-label="Добавить ссылку">Добавить</button>
+      </form>
+    </section>
+
+    <section class="list" id="list" aria-live="polite" aria-busy="false"></section>
+  </main>
+
+  <!-- Modal confirm -->
+  <div class="modal" id="confirm">
+    <div class="sheet">
+      <h3>Удалить ссылку?</h3>
+      <p>Действие необратимо.</p>
+      <div class="actions">
+        <button class="btn secondary" data-close>Отмена</button>
+        <button class="btn danger" data-yes>Удалить</button>
+      </div>
+    </div>
   </div>
 
-  <!-- ВАЖНО: весь JS внутри <script> ... </script> -->
   <script>
     const listEl = document.getElementById('list');
-    const form = document.getElementById('addForm');
+    const form = document.getElementById('form');
+    const modal = document.getElementById('confirm');
+    let pendingDeleteId = null;
+
+    function setBusy(b) { listEl.setAttribute('aria-busy', String(b)); }
 
     async function fetchLinks() {
-      const r = await fetch('/api/links');
-      const data = await r.json();
-      if (!data.ok) {
-        listEl.innerHTML = '<p>Ошибка загрузки</p>';
-        return;
-      }
-      render(data.items);
+      setBusy(true);
+      listEl.innerHTML = '';
+      try {
+        const r = await fetch('/api/links', { cache: 'no-store' });
+        const data = await r.json();
+        if (!data.ok) throw new Error(data.error || 'Ошибка API');
+        render(data.items);
+      } catch (e) {
+        listEl.innerHTML = `<div class="empty">Ошибка загрузки. Попробуй обновить страницу.</div>`;
+      } finally { setBusy(false); }
+    }
+
+    function esc(s) {
+      return String(s)
+        .replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')
+        .replaceAll('"','&quot;').replaceAll("'","&#039;");
     }
 
     function render(items) {
       if (!items.length) {
-        listEl.innerHTML = '<p>Пока пусто. Добавь первую ссылку выше.</p>';
+        listEl.innerHTML = `<div class="empty">Пока пусто. Добавь первую ссылку выше.</div>`;
         return;
       }
-      listEl.innerHTML = '';
+      const frag = document.createDocumentFragment();
       for (const it of items) {
-        const div = document.createElement('div');
-        div.className = 'item';
+        const card = document.createElement('article');
+        card.className = 'card';
         const created = new Date((it.created_at || 0) * 1000);
-        const title = it.title ? it.title : it.url;
-        div.innerHTML = `
-          <div>
-            <a class="big-link link" href="${it.url}" target="_blank" rel="noopener noreferrer">${title}</a>
-            <div class="meta">ID ${it.id} · ${created.toLocaleString()}</div>
+        const title = it.title ? esc(it.title) : esc(it.url);
+        card.innerHTML = `
+          <div class="row">
+            <div class="title">
+              <a href="${esc(it.url)}" target="_blank" rel="noopener noreferrer">${title}</a>
+            </div>
+            <div class="act">
+              <button class="icon-btn" data-copy="${it.url}" title="Скопировать ссылку">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8 8V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><rect x="4" y="8" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.6"/></svg>
+                Копировать
+              </button>
+              <button class="icon-btn danger" data-del="${it.id}" title="Удалить">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Удалить
+              </button>
+            </div>
           </div>
-          <div class="actions">
-            <button data-del="${it.id}">Удалить</button>
-          </div>`;
-        listEl.appendChild(div);
+          <div class="meta">ID ${it.id} · ${created.toLocaleString()}</div>
+        `;
+        frag.appendChild(card);
       }
-      listEl.querySelectorAll('button[data-del]').forEach(btn => {
+      listEl.innerHTML = '';
+      listEl.appendChild(frag);
+
+      // copy handlers
+      listEl.querySelectorAll('button[data-copy]').forEach(btn => {
         btn.onclick = async () => {
-          const id = btn.getAttribute('data-del');
-          if (!confirm('Удалить ссылку #' + id + '?')) return;
-          const r = await fetch('/api/links/' + id, { method: 'DELETE' });
-          const data = await r.json();
-          if (data.ok) fetchLinks(); else alert('Ошибка удаления');
+          try {
+            await navigator.clipboard.writeText(btn.getAttribute('data-copy'));
+            btn.innerHTML = `<svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> Скопировано`;
+            setTimeout(() => btn.innerHTML = `<svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8 8V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><rect x="4" y="8" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.6"/></svg> Копировать`, 1500);
+          } catch {}
+        };
+      });
+
+      // delete handlers
+      listEl.querySelectorAll('button[data-del]').forEach(btn => {
+        btn.onclick = () => {
+          pendingDeleteId = btn.getAttribute('data-del');
+          openModal();
         };
       });
     }
 
+    // Modal logic
+    function openModal() { modal.classList.add('show'); }
+    function closeModal() { modal.classList.remove('show'); pendingDeleteId = null; }
+    modal.querySelector('[data-close]').onclick = closeModal;
+    modal.querySelector('[data-yes]').onclick = async () => {
+      if (!pendingDeleteId) return closeModal();
+      try {
+        const r = await fetch('/api/links/' + pendingDeleteId, { method: 'DELETE' });
+        const data = await r.json();
+        if (data.ok) fetchLinks(); else alert('Ошибка удаления: ' + (data.error || ''));
+      } catch { alert('Ошибка сети'); }
+      closeModal();
+    };
+    modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+
+    // submit
     form.onsubmit = async (e) => {
       e.preventDefault();
       const url = document.getElementById('url').value.trim();
       const title = document.getElementById('title').value.trim();
       if (!url) return;
-      const r = await fetch('/api/links', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ url, title: title || undefined })
-      });
-      const data = await r.json();
-      if (data.ok) {
-        form.reset();
-        fetchLinks();
-      } else {
-        alert('Ошибка: ' + (data.error || 'неизвестно'));
-      }
+      try {
+        const r = await fetch('/api/links', {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            // 'x-write-token': 'mypass123' // включи, если защитишь запись токеном
+          },
+          body: JSON.stringify({ url, title: title || undefined })
+        });
+        const data = await r.json();
+        if (data.ok) { form.reset(); fetchLinks(); }
+        else alert('Ошибка: ' + (data.error || 'неизвестно'));
+      } catch { alert('Ошибка сети'); }
     };
 
     fetchLinks();
