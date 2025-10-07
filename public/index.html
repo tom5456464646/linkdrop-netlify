@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LinkDrop</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 16px; }
+    .wrap { max-width: 720px; margin: 0 auto; }
+    h1 { font-size: 24px; margin: 0 0 12px; }
+    form { display: flex; gap: 8px; margin-bottom: 16px; }
+    input[type="url"], input[type="text"] { flex: 1; padding: 10px; font-size: 16px; }
+    button { padding: 10px 14px; font-size: 16px; cursor: pointer; }
+    .item { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; padding: 12px; border: 1px solid #ddd; border-radius: 10px; margin-bottom: 10px; }
+    .link { font-size: 18px; word-break: break-word; }
+    .meta { color: #666; font-size: 12px; margin-top: 4px; }
+    .big-link { display: inline-block; padding: 12px 14px; border-radius: 8px; border: 1px solid #ccc; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>LinkDrop</h1>
+
+    <form id="addForm">
+      <input id="title" type="text" placeholder="Название (необязательно)" />
+      <input id="url" type="url" placeholder="Вставь ссылку (https://...)" required />
+      <button type="submit">Добавить</button>
+    </form>
+
+    <div id="list"></div>
+  </div>
+
+  <!-- ВАЖНО: весь JS внутри <script> ... </script> -->
+  <script>
+    const listEl = document.getElementById('list');
+    const form = document.getElementById('addForm');
+
+    async function fetchLinks() {
+      const r = await fetch('/api/links');
+      const data = await r.json();
+      if (!data.ok) {
+        listEl.innerHTML = '<p>Ошибка загрузки</p>';
+        return;
+      }
+      render(data.items);
+    }
+
+    function render(items) {
+      if (!items.length) {
+        listEl.innerHTML = '<p>Пока пусто. Добавь первую ссылку выше.</p>';
+        return;
+      }
+      listEl.innerHTML = '';
+      for (const it of items) {
+        const div = document.createElement('div');
+        div.className = 'item';
+        const created = new Date((it.created_at || 0) * 1000);
+        const title = it.title ? it.title : it.url;
+        div.innerHTML = `
+          <div>
+            <a class="big-link link" href="${it.url}" target="_blank" rel="noopener noreferrer">${title}</a>
+            <div class="meta">ID ${it.id} · ${created.toLocaleString()}</div>
+          </div>
+          <div class="actions">
+            <button data-del="${it.id}">Удалить</button>
+          </div>`;
+        listEl.appendChild(div);
+      }
+      listEl.querySelectorAll('button[data-del]').forEach(btn => {
+        btn.onclick = async () => {
+          const id = btn.getAttribute('data-del');
+          if (!confirm('Удалить ссылку #' + id + '?')) return;
+          const r = await fetch('/api/links/' + id, { method: 'DELETE' });
+          const data = await r.json();
+          if (data.ok) fetchLinks(); else alert('Ошибка удаления');
+        };
+      });
+    }
+
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      const url = document.getElementById('url').value.trim();
+      const title = document.getElementById('title').value.trim();
+      if (!url) return;
+      const r = await fetch('/api/links', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ url, title: title || undefined })
+      });
+      const data = await r.json();
+      if (data.ok) {
+        form.reset();
+        fetchLinks();
+      } else {
+        alert('Ошибка: ' + (data.error || 'неизвестно'));
+      }
+    };
+
+    fetchLinks();
+  </script>
+</body>
+</html>

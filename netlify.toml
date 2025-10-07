@@ -1,0 +1,18 @@
+[build]
+  publish = "public"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"   # компактная сборка функций
+
+# Проксируем /api/links на функцию (чтобы фронт не менять)
+[[redirects]]
+  from = "/api/links"
+  to = "/.netlify/functions/links"
+  status = 200
+
+# Для DELETE по /api/links/:id (динамический сегмент)
+[[redirects]]
+  from = "/api/links/:id"
+  to = "/.netlify/functions/links?id=:id"
+  status = 200

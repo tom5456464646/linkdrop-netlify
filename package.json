@@ -1,0 +1,8 @@
+{
+  "name": "linkdrop-netlify",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@netlify/blobs": "^6.0.0"
+  }
+}
